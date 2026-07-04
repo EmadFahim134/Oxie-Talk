@@ -1,9 +1,6 @@
 use pyo3::prelude::*;
 use std::sync::Mutex;
-use std::error::Error;
-use futures::StreamExt;
 use tokio::sync::mpsc;
-use libp2p::Swarm;
 
 mod discovery;
 mod audio;
@@ -12,7 +9,7 @@ mod audio;
 struct Backend {
     mdns: discovery::mdns::MdnsDiscovery,
     recorder: Mutex<audio::recorder::AudioRecorder>,
-    dht_tx: mpsc::Sender<String>,
+    _dht_tx: mpsc::Sender<String>,
 }
 
 #[pymethods]
@@ -31,7 +28,7 @@ impl Backend {
         Backend {
             mdns: discovery::mdns::MdnsDiscovery::new(),
             recorder: Mutex::new(audio::recorder::AudioRecorder::new()),
-            dht_tx: tx,
+            _dht_tx: tx,
         }
     }
 

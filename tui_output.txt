@@ -1,0 +1,29 @@
+stty: 'standard input': Inappropriate ioctl for device
+[?1049h
+[?25l[?1003h[?1006h[?1003l[?1006lstty: 'standard input': Inappropriate ioctl for device
+[?1049l
+[1A[?25h[1ATraceback (most recent call last):
+  File "/app/main.py", line 52, in <module>
+    main()
+  File "/app/main.py", line 14, in main
+    with ptg.WindowManager() as manager:
+         ^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.12/site-packages/pytermgui/window_manager/manager.py", line 121, in __exit__
+    raise exception
+  File "/app/main.py", line 49, in main
+    manager.run()
+  File "/app/.venv/lib/python3.12/site-packages/pytermgui/window_manager/manager.py", line 198, in run
+    self._run_input_loop()
+  File "/app/.venv/lib/python3.12/site-packages/pytermgui/window_manager/manager.py", line 135, in _run_input_loop
+    key = getch(interrupts=False)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.12/site-packages/pytermgui/input.py", line 438, in getch
+    key = _getch()
+          ^^^^^^^^
+  File "/app/.venv/lib/python3.12/site-packages/pytermgui/input.py", line 152, in __call__
+    buff = "".join(self.get_chars())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.12/site-packages/pytermgui/input.py", line 136, in get_chars
+    old_settings = termios.tcgetattr(descriptor)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+termios.error: (25, 'Inappropriate ioctl for device')

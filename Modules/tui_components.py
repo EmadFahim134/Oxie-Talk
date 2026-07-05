@@ -1,15 +1,19 @@
 import pytermgui as ptg
+import logging
 
 class AppTUI:
-    def __init__(self, manager, backend, user_profile):
+    def __init__(self, manager, backend, user_profile, shared_logs):
         self.manager = manager
         self.backend = backend
         self.user_profile = user_profile
+        self.shared_logs = shared_logs
+        self.log_container = ptg.Container()
 
     def create_main_window(self):
         peer_list = ptg.Container(ptg.Label("Finding peers..."))
 
         def refresh_peers(button):
+            logging.info("User requested peer refresh")
             peers = self.backend.browse_services()
             peer_list.get_lines().clear()
             if not peers:
@@ -22,11 +26,32 @@ class AppTUI:
                 try:
                     self.backend.start_ptt()
                     button.label = "Stop PTT"
+                    logging.info("PTT Started")
                 except Exception as e:
                     self.manager.toast(f"Error: {e}")
+                    logging.error(f"Failed to start PTT: {e}")
             else:
                 self.backend.stop_ptt()
                 button.label = "Start PTT"
+                logging.info("PTT Stopped")
+
+        def update_debug_logs():
+            # Fetch new logs from Rust
+            rust_logs = self.backend.fetch_logs()
+            for log in rust_logs:
+                self.shared_logs.append(log)
+
+            # Update the container
+            if len(self.shared_logs) > 0:
+                self.log_container.get_lines().clear()
+                # Show last 10 logs
+                for log in self.shared_logs[-10:]:
+                    self.log_container.lazy_add(ptg.Label(log))
+
+            self.manager.submit_callback(update_debug_logs, delay=1.0)
+
+        # Start log update loop
+        self.manager.submit_callback(update_debug_logs, delay=1.0)
 
         window = (
             ptg.Window(
@@ -35,11 +60,14 @@ class AppTUI:
                 ptg.Label("Peers Online:"),
                 peer_list,
                 "",
+                ptg.Label("[bold]Debug Logs:[/bold]"),
+                self.log_container,
+                "",
                 ptg.Button("Refresh Peers", onclick=refresh_peers),
                 ptg.Button("Start PTT", onclick=toggle_ptt),
                 ptg.Button("Exit", onclick=lambda _: self.manager.stop()),
             )
-            .set_title("Oxie-Talk Main")
+            .set_title("Oxie-Talk (Debug Mode)")
             .center()
         )
         return window

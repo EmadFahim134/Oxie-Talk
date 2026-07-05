@@ -17,24 +17,25 @@ pub struct DhtNode {
 }
 
 impl DhtNode {
-    pub async fn new() -> Result<Self, Box<dyn Error>> {
+    pub async fn new() -> Result<Self, Box<dyn Error + Send + Sync>> {
         let mut swarm = libp2p::SwarmBuilder::with_new_identity()
             .with_tokio()
             .with_tcp(
                 tcp::Config::default(),
                 noise::Config::new,
                 yamux::Config::default,
-            )?
+            ).map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?
             .with_behaviour(|key| {
                 let peer_id = PeerId::from(key.public());
                 let store = MemoryStore::new(peer_id);
                 let kademlia = kad::Behaviour::new(peer_id, store);
                 let mdns = mdns::tokio::Behaviour::new(mdns::Config::default(), peer_id)?;
                 Ok(OxieBehaviour { kademlia, mdns })
-            })?
+            }).map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?
             .build();
 
-        swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
+        swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse().map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)?;
 
         Ok(Self { swarm })
     }

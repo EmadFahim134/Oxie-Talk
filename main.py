@@ -2,10 +2,22 @@ import pytermgui as ptg
 import sys
 import os
 import logging
+import threading
+import time
 from Modules.persistence import save_profile, get_profile, create_db_and_tables
 from Modules.tui_components import AppTUI
 from Modules.logger import setup_logging
 from oxie_backend import Backend
+
+def poll_rust_logs(backend):
+    while True:
+        try:
+            rust_logs = backend.fetch_logs()
+            for log in rust_logs:
+                logging.info(log)
+        except Exception as e:
+            logging.error(f"Error fetching rust logs: {e}")
+        time.sleep(1.0)
 
 def main():
     # OS Specific adjustments
@@ -14,12 +26,15 @@ def main():
         # Enable ANSI support for Windows 10+ consoles
         os.system("color")
 
-    shared_logs = []
-    logger = setup_logging(shared_logs)
+    logger = setup_logging()
     logger.info(f"Oxie-Talk starting on {sys.platform}")
 
     create_db_and_tables()
     backend = Backend()
+
+    # Start the daemon thread to poll Rust logs independently of PyTermGUI synchronous loop
+    log_thread = threading.Thread(target=poll_rust_logs, args=(backend,), daemon=True)
+    log_thread.start()
 
     profile = get_profile("testuser")
 
@@ -31,7 +46,7 @@ def main():
                 links = links_input.value
                 new_profile = save_profile(username, bio, links)
                 manager.remove(setup_window)
-                app_tui = AppTUI(manager, backend, new_profile, shared_logs)
+                app_tui = AppTUI(manager, backend, new_profile)
                 manager.add(app_tui.create_main_window())
                 backend.register_service(username, 5000)
 
@@ -53,7 +68,7 @@ def main():
             )
             manager.add(setup_window)
         else:
-            app_tui = AppTUI(manager, backend, profile, shared_logs)
+            app_tui = AppTUI(manager, backend, profile)
             manager.add(app_tui.create_main_window())
             backend.register_service(profile.username, 5000)
 

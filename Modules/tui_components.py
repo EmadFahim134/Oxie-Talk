@@ -4,12 +4,10 @@ import asyncio
 from Modules.signaling import Signaling
 
 class AppTUI:
-    def __init__(self, manager, backend, user_profile, shared_logs):
+    def __init__(self, manager, backend, user_profile):
         self.manager = manager
         self.backend = backend
         self.user_profile = user_profile
-        self.shared_logs = shared_logs
-        self.log_container = ptg.Container()
         self.message_container = ptg.Container()
         self.active_peer = None
         self.signaling = Signaling(self.on_webrtc_message)
@@ -53,20 +51,6 @@ class AppTUI:
                 button.label = "Start PTT"
                 logging.info("PTT Stopped")
 
-        def update_debug_logs():
-            rust_logs = self.backend.fetch_logs()
-            for log in rust_logs:
-                self.shared_logs.append(log)
-
-            if len(self.shared_logs) > 0:
-                self.log_container.get_lines().clear()
-                for log in self.shared_logs[-5:]:
-                    self.log_container.lazy_add(ptg.Label(log))
-
-            self.manager.submit_callback(update_debug_logs, delay=1.0)
-
-        self.manager.submit_callback(update_debug_logs, delay=1.0)
-
         main_window = (
             ptg.Window(
                 f"[bold]Welcome, {self.user_profile.username}![/bold]",
@@ -74,14 +58,11 @@ class AppTUI:
                 ptg.Label("Peers Online (Click to Chat):"),
                 peer_list,
                 "",
-                ptg.Label("[bold]Debug Logs:[/bold]"),
-                self.log_container,
-                "",
                 ptg.Button("Refresh Peers", onclick=refresh_peers),
                 ptg.Button("Start PTT", onclick=toggle_ptt),
                 ptg.Button("Exit", onclick=lambda _: self.manager.stop()),
             )
-            .set_title("Oxie-Talk (Debug Mode)")
+            .set_title("Oxie-Talk")
             .center()
         )
         return main_window

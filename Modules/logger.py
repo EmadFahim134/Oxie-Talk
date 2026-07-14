@@ -1,21 +1,17 @@
 import logging
 
-class TuiLogHandler(logging.Handler):
-    def __init__(self, log_list):
-        super().__init__()
-        self.log_list = log_list
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        self.log_list.append(f"[PYTHON] {log_entry}")
-        if len(self.log_list) > 500:
-            self.log_list.pop(0)
-
-def setup_logging(log_list):
+def setup_logging(log_file="oxie_talk.log"):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    handler = TuiLogHandler(log_list)
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+
+    # Create file handler which logs info messages
+    fh = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+    fh.setLevel(logging.INFO)
+
+    # Create formatter and add it to the handler
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(fh)
     return logger
